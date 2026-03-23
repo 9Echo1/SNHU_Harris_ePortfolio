@@ -1,1 +1,2 @@
-# SNHU_CS465_FULL-STACK_DEV1
+# SNHU_Harris_ePortfolio
+An ePortfolio created for my SNHU Capstone.
