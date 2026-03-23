@@ -43,6 +43,30 @@ export class LoginComponent {
     }
   }
 
+  public onRegisterSubmit(): void {
+    this.formError = '';
+
+    if (!this.credentials.name || !this.credentials.email || !this.credentials.password) {
+      this.formError = 'All fields required for registration';
+      return;
+    }
+
+    let newUser = {
+      name: this.credentials.name,
+      email: this.credentials.email,
+    } as User;
+
+    this.authenticationService.register(newUser, this.credentials.password);
+
+    setTimeout(() => {
+      if (this.authenticationService.isLoggedIn()) {
+        this.router.navigate(['']);
+      } else {
+        this.formError = 'Registration failed. Please try again.';
+      }
+    }, 3000);
+  }
+
   private doLogin(): void {
     let newUser = {
       name: this.credentials.name,

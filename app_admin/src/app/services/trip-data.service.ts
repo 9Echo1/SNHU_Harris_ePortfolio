@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User } from '../models/user';
 import { AuthResponse } from '../models/auth-response';
@@ -25,19 +25,30 @@ export class TripDataService {
     return this.http.get<Trip[]>(this.url);
   }
 
-  addTrip(formData: Trip) : Observable<Trip> {
-    return this.http.post<Trip>(this.url, formData);
-  }
+  addTrip(formData: Trip): Observable<Trip> {
+  const token = this.storage.getItem('travlr-token') || '';
+
+  const headers = new HttpHeaders({
+    Authorization: `Bearer ${token}`
+  });
+
+  return this.http.post<Trip>(this.url, formData, { headers });
+}
   
   getTrip(tripCode: string) : Observable<Trip[]> {
     // console.log('Inside TripDataService::getTrips');
     return this.http.get<Trip[]>(this.url + '/' + tripCode);
   }
 
-  updateTrip(formData: Trip) : Observable<Trip> {
-    // console.log('Inside TripDataService::addTrips');
-    return this.http.put<Trip>(this.url + '/' + formData.code, formData);
-  }
+  updateTrip(formData: Trip): Observable<Trip> {
+  const token = this.storage.getItem('travlr-token') || '';
+
+  const headers = new HttpHeaders({
+    Authorization: `Bearer ${token}`
+  });
+
+  return this.http.put<Trip>(this.url + '/' + formData.code, formData, { headers });
+}
 
   // Call to /login endpoint, returns JWT
   login(user: User, passwd: string) : Observable<AuthResponse> {

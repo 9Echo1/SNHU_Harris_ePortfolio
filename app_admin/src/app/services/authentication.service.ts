@@ -20,16 +20,8 @@ export class AuthenticationService {
   // NOTE: For this application we have decided that we will name
   // the key for our token 'travlr-token'
   public getToken(): string {
-    let out: any;
-    out = this.storage.getItem('travlr-token');
-
-    // Make sure we return a string even if we don't have a token
-    if(!out)
-    {
-      return '';
-    }
-    return out;
-  }
+  return this.storage.getItem('travlr-token') || '';
+}
 
   // Save token to Storage Provider.
   // NOTE: For this application we have decided that we will name
@@ -48,23 +40,37 @@ export class AuthenticationService {
   // reauthenticate if the token has expired
   public isLoggedIn(): boolean {
     const token: string = this.getToken();
-    if (token) {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.exp > Date.now() / 1000;
-    } else {
-      return false;
-    }
+    
+    if (!token) {
+    return false;
   }
 
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.exp > Date.now() / 1000;
+  } catch (error) {
+    console.error('Invalid token:', error);
+    return false;
+  }
+}
   // Retrieve the current user.  This function should only be called
   // after the calling method has checked to make sure that the user
   // is logged in.
-  public getCurrentUser(): User {
-    const token: string = this.getToken();
-    const { email, name } = JSON.parse(atob(token.split('.')[1]));
-    return { email, name } as User;
+  public getCurrentUser(): User | null {
+  const token: string = this.getToken();
+
+  if (!token) {
+    return null;
   }
 
+  try {
+    const { email, name } = JSON.parse(atob(token.split('.')[1]));
+    return { email, name } as User;
+  } catch (error) {
+    console.error('Invalid token in getCurrentUser:', error);
+    return null;
+  }
+}
   // Login method that leverages the login method in tripDataService
   // because that method returns an observable, we subscribe to the 
   // result and only process when the Observable condition is satisfied

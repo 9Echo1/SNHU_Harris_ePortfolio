@@ -1,19 +1,20 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from "@angular/forms";
-import { Router } from "@angular/router";
+import { Router, RouterLink  } from "@angular/router";
 import { TripDataService } from '../services/trip-data.service';
 
 @Component({
   selector: 'app-add-trip',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './add-trip.component.html',
   styleUrl: './add-trip.component.css'
 })
 export class AddTripComponent implements OnInit {
   addForm!: FormGroup;
   submitted = false;
+  formMessage: string = '';
 
   constructor(
     private formBuilder: FormBuilder,
@@ -29,7 +30,7 @@ export class AddTripComponent implements OnInit {
       length: ['', Validators.required],
       start: ['', Validators.required],
       resort: ['', Validators.required],
-      perPerson: ['', Validators.required],
+      perPerson: [0, Validators.required],
       image: ['', Validators.required],
       description: ['', Validators.required],
     })
@@ -37,6 +38,8 @@ export class AddTripComponent implements OnInit {
 
   public onSubmit() {
     this.submitted = true;
+    this.formMessage = '';
+
     if(this.addForm.valid) {
       this.tripService.addTrip(this.addForm.value)
       .subscribe( {
@@ -45,7 +48,8 @@ export class AddTripComponent implements OnInit {
           this.router.navigate(['']);
         },
         error: (error: any) => {
-          console.log('Error: ' + error);
+          console.log('Error: ', error);
+          this.formMessage = 'Unable to add trip.  Make sure you are logged in.';
         }});
     }
   }

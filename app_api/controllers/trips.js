@@ -10,6 +10,8 @@ const tripsList = async(req, res) => {
         .find({}) // No filter, return all records
         .exec();
 
+        console.log("Trips query result:", q);
+
         // console.log(q);
 
     if(!q)

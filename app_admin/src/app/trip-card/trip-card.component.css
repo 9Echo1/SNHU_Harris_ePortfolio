@@ -1,0 +1,19 @@
+.card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-body {
+  flex-grow: 1;
+}
+
+.card-img-top {
+  height: 200px;
+  object-fit: cover;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  transition: 0.2s ease-in-out;
+}
