@@ -24,7 +24,7 @@ export class JwtInterceptor implements HttpInterceptor {
       // console.log(token);
       const authReq = request.clone({
         setHeaders: {
-          Authorization: 'Bearer ${token}',
+          Authorization: 'Bearer ' + token,
         },
       });
       return next.handle(authReq);

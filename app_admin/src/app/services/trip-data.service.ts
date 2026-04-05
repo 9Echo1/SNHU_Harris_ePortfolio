@@ -28,23 +28,24 @@ export class TripDataService {
   addTrip(formData: Trip): Observable<Trip> {
   const token = this.storage.getItem('travlr-token') || '';
 
+  console.log('TOKEN BEING USED:', token);
+
   const headers = new HttpHeaders({
-    Authorization: `Bearer ${token}`
+    Authorization: 'Bearer ' + token
   });
 
   return this.http.post<Trip>(this.url, formData, { headers });
 }
   
-  getTrip(tripCode: string) : Observable<Trip[]> {
-    // console.log('Inside TripDataService::getTrips');
-    return this.http.get<Trip[]>(this.url + '/' + tripCode);
-  }
+  getTrip(tripCode: string): Observable<Trip> {
+  return this.http.get<Trip>(this.url + '/' + tripCode);
+}
 
   updateTrip(formData: Trip): Observable<Trip> {
   const token = this.storage.getItem('travlr-token') || '';
 
   const headers = new HttpHeaders({
-    Authorization: `Bearer ${token}`
+    Authorization: 'Bearer ' + token
   });
 
   return this.http.put<Trip>(this.url + '/' + formData.code, formData, { headers });

@@ -63,6 +63,11 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+app.use('/api', (req, res, next) => {
+  console.log('API REQUEST HIT:', req.method, req.originalUrl);
+  next();
+})
+
 // Wire-up routes to controllers
 app.use('/', indexRouter);
 app.use('/users', usersRouter);

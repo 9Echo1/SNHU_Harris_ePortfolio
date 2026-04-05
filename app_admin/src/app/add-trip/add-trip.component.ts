@@ -37,22 +37,34 @@ export class AddTripComponent implements OnInit {
   }
 
   public onSubmit() {
-    this.submitted = true;
-    this.formMessage = '';
+  this.submitted = true;
+  this.formMessage = '';
 
-    if(this.addForm.valid) {
-      this.tripService.addTrip(this.addForm.value)
-      .subscribe( {
+  if (this.addForm.valid) {
+    console.log('FORM DATA:', this.addForm.value);
+    
+    this.tripService.addTrip(this.addForm.value)
+      .subscribe({
         next: (data: any) => {
           console.log(data);
           this.router.navigate(['']);
         },
         error: (error: any) => {
           console.log('Error: ', error);
-          this.formMessage = 'Unable to add trip.  Make sure you are logged in.';
-        }});
-    }
+
+          if (error.status === 401) {
+            this.formMessage = 'You are not authorized. Please log in again.';
+          } else if (error.error?.message) {
+            this.formMessage = error.error.message;
+          } else if (error.error?.error) {
+            this.formMessage = error.error.error;
+          } else {
+            this.formMessage = 'Unable to add trip.';
+          }
+        }
+      });
   }
+}
   // Get the form short name to access the form fields
   get f() { return this.addForm.controls; }
 

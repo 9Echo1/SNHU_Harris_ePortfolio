@@ -4,10 +4,10 @@ const Model = mongoose.model('trips');
 
 // GET: /trips - lists all the trips
 // Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
+// and JSON message to the requesting client.
 const tripsList = async (req, res) => {
     try {
-        const { resort, sortBy, search } = req.query;
+        const { resort, sortBy, search, maxPrice } = req.query;
 
         let query = {};
 
@@ -24,110 +24,151 @@ const tripsList = async (req, res) => {
             ];
         }
 
-        let tripsQuery = Model.find(query);
-
-        // Sort by price or duration
-        const q = await tripsQuery.exec();
-
-        // Fix sorting manually if needed
-        let results = q;
-
-        if (sortBy === "price") {
-            results = q.sort((a, b) => parseFloat(a.perPerson) - parseFloat(b.perPerson));
-        } else if (sortBy === "duration") {
-            results = q.sort((a, b) => parseFloat(a.length) - parseFloat(b.length));
+        // Filter by max price
+        if (maxPrice) {
+            query.perPerson = { $lte: Number(maxPrice) };
         }
 
-        console.log("Trips query result:", results);
+        let tripsQuery = Model.find(query);
+
+        // Database-side sorting where possible
+        if (sortBy === 'price') {
+            tripsQuery.sort({ perPerson: 1 });
+        } else if (sortBy === 'name') {
+            tripsQuery = tripsQuery.sort({ name: 1});
+        }
+
+        const results = await tripsQuery.exec();
 
         return res.status(200).json(results);
 
     } catch (err) {
-        console.error("Error retrieving trips:", err);
-        return res.status(500).json(err);
+        console.error('Error retrieving trips:', err);
+        return res.status(500).json({
+            message: 'Error retrieving trips',
+            error: err.message
+        });
     }
 };
 
-module.exports = {
-    tripsList
-};
+// Get: /trips/:tripCode 
+// Gets all the trips regardless of the outcome, response must include HTML 
+// status code and JSON message to the requesting client.
+const tripsFindByCode = async (req, res) => {
+    try {
+        const q = await Model.findOne({
+            code: req.params.tripCode.toUpperCase()
+        }).exec();
 
-// Get: /trips/:tripCode - lists a single trip
-// Regardless of outcome, response must include HTML status code
-// and JSON message to the requesting client
-const tripsFindByCode = async(req, res) => {
-    const q = await Model
-        .find({'code' : req.params.tripCode }) // Return a single record
-        .exec();
-
-        // console.log(q);
-
-    if(!q)
-    { // Database returned no data
-        return res
-                .status(404)
-                .json(err);
-    } else { // Return the resulting trip list
-        return res
-            .status(200)
-            .json(q);
+        if (!q) {
+            return res.status(404).json({ message: 'Trip not found '});
+        } else {
+            return res.status(200).json(q);
+        }
+    } catch (err) {
+        console.error('Error retrieving trip:', err);
+        return res.status(500).json({
+            message: 'Error retrieving trip',
+            error: err.message
+        });
     }
 };
 
-// PUT: /trips/:tripCode - Updates a Trip regardless of the outcome, response must include HTML status code and JSON message to the requesting client
+// PUT: /trips/:tripCode - regardless of the outcome 
+// Updates a Trip, response must include HTML status code 
+// and JSON message to the requesting client.
 const tripsUpdateTrip = async (req, res) => {
-    console.log(req.params);
-    console.log(req.body);
     try {
         const q = await Model.findOneAndUpdate(
+            { code: req.params.tripCode.toUpperCase() },
             {
-                code: req.params.tripCode
-            }, {
-                code: req.body.code,
+                code: req.body.code ? req.body.code.toUpperCase() : undefined,
                 name: req.body.name,
                 length: req.body.length,
                 start: req.body.start,
                 resort: req.body.resort,
-                perPerson: req.body.perPerson,
+                perPerson: req.body.perPerson !== undefined ? Number(req.body.perPerson) : undefined,
                 image: req.body.image,
-                description: req.body.description,
+                description: req.body.description
+            },
+            {
+                new: true,
+                runValidators: true
             }
         ).exec();
 
         if (!q) {
-            // If Database returns no data
-            return res.status(404).json({ message: "Trip not found"});
+            return res.status(404).json({ message: 'Trip not found' });
         } else {
-            // Return the resulting trip
             return res.status(200).json(q);
         }
+    } catch (err) {
+        console.error('Error updating trip:', err);
 
-        // console.log(q)
-    } catch (error) {
-        console.error("Error updating trip:", error);
-        return res.status(500).json({ error: "Internal server error"});
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Validation failed',
+                error: err.message
+            });
+        }
+
+        if (err.code === 11000) {
+            return res.status(400).json({
+                message: 'Trip code must be unique',
+                error: err.message
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Internal server error',
+            error: err.message
+        });
     }
 };
 
+// POST: /trips - regardless of the outcome, 
+// Adds a Trip, response must include HTML status code 
+// and JSON message to the requesting client.
 const tripsAddTrip = async (req, res) => {
-    const newtrip = new Trip ({
-        code: req.body.code,
-        name: req.body.name,
-        length: req.body.length,
-        start: req.body.start,
-        resort: req.body.resort,
-        perPerson: req.body.perPerson,
-        image: req.body.image,
-        description: req.body.description
-    });
+    console.log('tripsAddTrip HIT', req.body);
+    
+    try {
+        const newtrip = new Trip({
+            code: req.body.code ? req.body.code.toUpperCase() : undefined,
+            name: req.body.name,
+            length: req.body.length,
+            start: req.body.start,
+            resort: req.body.resort,
+            perPerson: Number(req.body.perPerson),
+            image: req.body.image,
+            description: req.body.description
+        });
 
-    const q = await newtrip.save();
+        const q = await newtrip.save();
 
-    if (!q) {
-        // If database returns no data
-        return res.status(400).json(err);
-    } else {
         return res.status(201).json(q);
+
+    } catch (err) {
+        console.error('Error creating trip:', err);
+
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                message: 'Validation failed',
+                error: err.message
+            });
+        }
+
+        if (err.code === 11000) {
+            return res.status(400).json({
+                message: 'Trip code must be unique',
+                error: err.message
+            });
+        }
+
+        return res.status(500).json({
+            message: 'Internal server error',
+            error: err.message
+        });
     }
 };
 
